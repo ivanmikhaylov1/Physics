@@ -97,4 +97,6 @@ plt.ylabel('Высота, м', fontsize=12)
 plt.legend(fontsize=12)
 plt.grid(True)
 plt.axis('equal')
-plt.show()
+plt.savefig('trajectory.png', bbox_inches='tight')
+plt.close()
+
