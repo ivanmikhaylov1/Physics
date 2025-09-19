@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      SCRIPT: M1.py
+      SCRIPT: M1/M1.py
       IMAGE: trajectory.png
       BRANCH_PREFIX: generated-plot-
     steps:
