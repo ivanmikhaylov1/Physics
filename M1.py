@@ -1,18 +1,23 @@
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
+import yaml
+
+
+with open("params.yml", "r") as f:
+  params = yaml.safe_load(f)
 
 ### Начальные условия
 
 g = 9.8
-v0 = 343.0
-angle_degree = 45.0
-m = 10.0
+v0 = params["v0"]
+angle_degree = params["angle_degree"]
+m = params["m"]
 angle_radians = np.radians(angle_degree)
-k_linear = 0.1
-k_quadratic = 3 * 10**(-3)
-x0 = 0.0
-y0 = 0.0
+k_linear = params["k_linear"]
+k_quadratic = params["k_quadratic"]
+x0 = params["x0"]
+y0 = params["y0"]
 
 if v0 > 2000:
   raise ValueError("Слишком большая скорость")
@@ -97,6 +102,4 @@ plt.ylabel('Высота, м', fontsize=12)
 plt.legend(fontsize=12)
 plt.grid(True)
 plt.axis('equal')
-plt.savefig('trajectory.png', bbox_inches='tight')
-plt.close()
-
+plt.show()
