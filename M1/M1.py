@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import yaml
 
 
-with open("params.yml", "r") as f:
+with open("M1/params.yml", "r") as f:
   params = yaml.safe_load(f)
 
 ### Начальные условия
