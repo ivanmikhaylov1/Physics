@@ -58,7 +58,7 @@ jobs:
           echo "${{ env.IMAGE }} NOT found"
           exit 1
         fi
-    - name: create branch push image and prune remote branches
+    - name: create branch push image and prune only auto branches
       run: |
         BRANCH_NAME="${{ env.BRANCH_PREFIX }}${{ github.run_id }}"
         git config user.name "github-actions[bot]"
@@ -71,10 +71,16 @@ jobs:
           git commit -m "Add generated ${{ env.IMAGE }} from workflow #${{ github.run_id }}"
           git push origin "$BRANCH_NAME"
         fi
-        for ref in $(git ls-remote --heads origin | awk '{print $2}' | sed 's#refs/heads/##'); do
-          if [ "$ref" != "main" ] && [ "$ref" != "$BRANCH_NAME" ]; then
-            git push origin --delete "$ref" || true
-          fi
+        git fetch origin --prune
+        for remote_ref in $(git ls-remote --heads origin | awk '{print $2}' | sed 's#refs/heads/##'); do
+          case "$remote_ref" in
+            $BRANCH_NAME) continue ;;
+            main) continue ;;
+            ${{ env.BRANCH_PREFIX }}*) 
+              git push origin --delete "$remote_ref" || true
+              ;;
+            *) continue ;;
+          esac
         done
     - name: add image to Actions summary
       run: |
