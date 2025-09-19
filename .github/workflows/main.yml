@@ -1,4 +1,7 @@
-name: Generate plot
+name: Generate and commit plot
+
+permissions:
+  contents: write
 
 on:
   push:
@@ -10,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: true
     - name: setup-python
       uses: actions/setup-python@v4
       with:
@@ -34,22 +40,32 @@ jobs:
         PY
     - name: verify output
       run: |
-        echo "workspace files:"
         ls -la
         if [ -f trajectory.png ]; then
           echo "trajectory.png found"
         else
           echo "trajectory.png NOT found"
+          exit 1
         fi
     - name: add to summary
       run: |
-        if [ -f trajectory.png ]; then
-          echo "![График](trajectory.png)" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "Файл trajectory.png не найден, см. логи" >> $GITHUB_STEP_SUMMARY
-        fi
+        echo "![График](trajectory.png)" >> $GITHUB_STEP_SUMMARY
     - name: upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: trajectory-plot
         path: trajectory.png
+    - name: commit and push plot to new branch
+      env:
+        BRANCH_NAME: generated-plot-${{ github.run_id }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git switch -c "$BRANCH_NAME"
+        git add trajectory.png
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Add generated trajectory.png from workflow #${{ github.run_id }}"
+          git push origin "$BRANCH_NAME"
+        fi
