@@ -10,14 +10,14 @@ with open("M1/params.yml", "r") as f:
 ### Начальные условия
 
 g = 9.8
-v0 = params["v0"]
-angle_degree = params["angle_degree"]
-m = params["m"]
+v0 = params["Начальная скорость"]
+angle_degree = params["Угол броска"]
+m = params["Масса"]
 angle_radians = np.radians(angle_degree)
-k_linear = params["k_linear"]
-k_quadratic = params["k_quadratic"]
-x0 = params["x0"]
-y0 = params["y0"]
+k_linear = params["Линейное сопротивление"]
+k_quadratic = params["Квадратичное сопротивление"]
+x0 = params["Начальная позиция x"]
+y0 = params["Начальная позиция y"]
 
 if v0 > 2000:
   raise ValueError("Слишком большая скорость")
