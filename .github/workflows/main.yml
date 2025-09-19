@@ -10,24 +10,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python
+    - name: setup-python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    - name: Install dependencies
+    - name: install-deps
       run: |
         python -m pip install --upgrade pip
         pip install numpy scipy matplotlib
-    - name: Replace plt.show() with saving and run script
+    - name: run script with Agg backend
       run: |
-        if grep -q "plt.show()" main.py; then
-          sed -i "s/plt.show()/plt.savefig('trajectory.png',bbox_inches='tight')/" main.py
+        python - <<'PY'
+        import matplotlib
+        matplotlib.use('Agg')
+        import runpy, sys, traceback, os
+        try:
+            runpy.run_path('main.py', run_name='__main__')
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+        finally:
+            os.system('ls -la')
+        PY
+    - name: verify output
+      run: |
+        echo "workspace files:"
+        ls -la
+        if [ -f trajectory.png ]; then
+          echo "trajectory.png found"
+        else
+          echo "trajectory.png NOT found"
         fi
-        python main.py
-    - name: Add image to GitHub Actions summary
+    - name: add to summary
       run: |
-        echo "![График](trajectory.png)" >> $GITHUB_STEP_SUMMARY
-    - name: Upload plot as artifact
+        if [ -f trajectory.png ]; then
+          echo "![График](trajectory.png)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "Файл trajectory.png не найден, см. логи" >> $GITHUB_STEP_SUMMARY
+        fi
+    - name: upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: trajectory-plot
