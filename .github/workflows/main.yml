@@ -20,10 +20,10 @@ jobs:
         pip install numpy scipy matplotlib
     - name: Replace plt.show() with saving and run script
       run: |
-        if grep -q "plt.show()" plot.py; then
-          sed -i "s/plt.show()/plt.savefig('trajectory.png',bbox_inches='tight')/" plot.py
+        if grep -q "plt.show()" main.py; then
+          sed -i "s/plt.show()/plt.savefig('trajectory.png',bbox_inches='tight')/" main.py
         fi
-        python plot.py
+        python main.py
     - name: Add image to GitHub Actions summary
       run: |
         echo "![График](trajectory.png)" >> $GITHUB_STEP_SUMMARY
