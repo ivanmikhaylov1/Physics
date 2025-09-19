@@ -1,0 +1,7 @@
+v0: 343.0
+angle_degree: 45.0
+m: 10.0
+k_linear: 0.1
+k_quadratic: 0.003
+x0: 0.0
+y0: 0.0
