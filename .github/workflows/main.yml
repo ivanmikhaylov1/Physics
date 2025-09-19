@@ -66,7 +66,7 @@ jobs:
         fi
     - name: add image to Actions summary
       run: |
-        RAW_URL="https://github.com/${{ github.repository }}/blob/${{ env.BRANCH_PREFIX }}${{ github.run_id }}/${{ env.IMAGE }}"
+        RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/${{ env.BRANCH_PREFIX }}${{ github.run_id }}/${{ env.IMAGE }}?token=GHSAT0AAAAAADKKBRHTTDFYLHWZD47LIWF22GM7FPQ"
         echo "![График]($RAW_URL)" >> $GITHUB_STEP_SUMMARY
         echo "Raw URL: $RAW_URL"
     - name: upload artifact
