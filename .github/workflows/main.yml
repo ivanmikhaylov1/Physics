@@ -52,13 +52,11 @@ jobs:
           exit 1
         fi
     - name: create branch and push image
-      env:
-        BRANCH_NAME: ${{ env.BRANCH_PREFIX }}${{ github.run_id }}
       run: |
+        BRANCH_NAME="${{ env.BRANCH_PREFIX }}${{ github.run_id }}"
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git switch -c "$BRANCH_NAME"
-        mkdir -p .
         git add "${{ env.IMAGE }}"
         if git diff --staged --quiet; then
           echo "No changes to commit"
@@ -66,11 +64,9 @@ jobs:
           git commit -m "Add generated ${{ env.IMAGE }} from workflow #${{ github.run_id }}"
           git push origin "$BRANCH_NAME"
         fi
-    - name: add image to Actions summary (raw.githubusercontent)
-      env:
-        BRANCH_NAME: ${{ env.BRANCH_PREFIX }}${{ github.run_id }}
-        RAW_URL: "https://raw.githubusercontent.com/${{ github.repository }}/$BRANCH_NAME/${{ env.IMAGE }}"
+    - name: add image to Actions summary
       run: |
+        RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/${{ env.BRANCH_PREFIX }}${{ github.run_id }}/${{ env.IMAGE }}"
         echo "![График]($RAW_URL)" >> $GITHUB_STEP_SUMMARY
         echo "Raw URL: $RAW_URL"
     - name: upload artifact
