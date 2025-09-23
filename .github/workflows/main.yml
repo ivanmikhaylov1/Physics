@@ -109,8 +109,6 @@ jobs:
             BRANCH_NAME="${{ env.BRANCH_PREFIX }}${{ github.run_id }}"
             RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/$BRANCH_NAME/${{ env.IMAGE }}"
             echo "![График]($RAW_URL)"
-            echo ""
-            echo "Raw URL: $RAW_URL"
           else
             echo "_График не был создан из-за ошибки._"
           fi
