@@ -42,17 +42,25 @@ jobs:
       id: run-script
       run: |
         set -o pipefail
-        OUTPUT=$(python3 - <<'PY'
-import matplotlib
-matplotlib.use('Agg')
-import runpy
-runpy.run_path('main.py', run_name='__main__')
-PY
-)
+        cat > .run_with_backend.py <<'PY'
+        import matplotlib
+        matplotlib.use('Agg')
+        import runpy, sys, traceback
+        try:
+            runpy.run_path('main.py', run_name='__main__')
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+        PY
+        python3 .run_with_backend.py > run_output.txt 2>&1
+        RC=$?
+        OUTPUT=$(cat run_output.txt)
         echo "$OUTPUT"
         echo "OUTPUT<<EOF" >> $GITHUB_ENV
         printf '%s\n' "$OUTPUT" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
+        echo "exit_code=$RC" >> $GITHUB_OUTPUT
+
 
     - name: verify image
       id: verify-image
