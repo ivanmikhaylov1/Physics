@@ -12,7 +12,6 @@ with open("M1/params.yml", "r") as f:
 g = 9.8
 v0 = params["Начальная скорость"]
 angle_degree = params["Угол броска"]
-m = params["Масса"]
 angle_radians = np.radians(angle_degree)
 k_linear = params["Линейное сопротивление"]
 k_quadratic = params["Квадратичное сопротивление"]
@@ -27,35 +26,37 @@ if angle_degree > 90:
   raise ValueError("Угол должен быть не больше 90 градусов")
 if angle_degree <= 0:
   raise ValueError("Значение угла должно быть положительным")
-if m <= 0:
-  raise ValueError("Значение массы должно быть положительным")
+if k_linear >= 0:
+  raise ValueError("Значение линейного сопротивления должно быть положительным")
+if k_quadratic >= 0:
+  raise ValueError("Значение линейного сопротивления должно быть положительным")
 
 ### Проекции скоростей
 
-def model(Y, t, g, m, k, resistance_type):
+def model(Y, t, g, k, resistance_type):
   x, y, vx, vy = Y
 
   if resistance_type == "Нет":
     ax = 0.0
     ay = -g
   elif resistance_type == "Линейное":
-    ax = - (k / m) * vx
-    ay = - g - (k / m) * vy
+    ax = - k * vx
+    ay = - g - k * vy
   elif resistance_type == "Квадратичное":
     v = np.sqrt(vx ** 2 + vy ** 2)
-    ax = - (k / m) * v * vx
-    ay = - g - (k / m) * v * vy
+    ax = - k * v * vx
+    ay = - g - k * v * vy
 
   return [vx, vy, ax, ay]
 
-def calculate_trace(x0, y0, v0, angle_degree, m, g, k, resistance_type):
+def calculate_trace(x0, y0, v0, angle_degree, g, k, resistance_type):
     angle_radians = np.radians(angle_degree)
     Y0 = [x0, y0, v0 * np.cos(angle_radians), v0 * np.sin(angle_radians)]
 
     t_flight_estimate = 2 * Y0[3] / g
     t_points = np.linspace(0, t_flight_estimate * 2.0, 1000)
 
-    args_tuple = (g, m, k, resistance_type)
+    args_tuple = (g, k, resistance_type)
     solution = odeint(model, Y0, t_points, args=args_tuple)
 
     for i in range(len(solution)):
@@ -66,16 +67,16 @@ def calculate_trace(x0, y0, v0, angle_degree, m, g, k, resistance_type):
 
 ### Расчеты и визуализация
 
-trajectory_none = calculate_trace(x0, y0, v0, angle_degree, m, g, 0, "Нет")
-trajectory_linear = calculate_trace(x0, y0, v0, angle_degree, m, g, k_linear, "Линейное")
-trajectory_quadratic = calculate_trace(x0, y0, v0, angle_degree, m, g, k_quadratic, "Квадратичное")
+trajectory_none = calculate_trace(x0, y0, v0, angle_degree, g, 0, "Нет")
+trajectory_linear = calculate_trace(x0, y0, v0, angle_degree, g, k_linear, "Линейное")
+trajectory_quadratic = calculate_trace(x0, y0, v0, angle_degree, g, k_quadratic, "Квадратичное")
 
 t_theory_max = 2 * v0 * np.sin(np.radians(angle_degree)) / g
 t_theory = np.linspace(0, t_theory_max, 200)
 x_theory = v0 * np.cos(np.radians(angle_degree)) * t_theory
 y_theory = v0 * np.sin(np.radians(angle_degree)) * t_theory - 0.5 * g * t_theory**2
 
-print(f"Параметры: v0={v0} м/с, угол={angle_degree}°, масса={m} кг")
+print(f"Параметры: v0={v0} м/с, угол={angle_degree}°")
 
 # Сравнение с теорией
 range_numeric = trajectory_none[-1, 0]
