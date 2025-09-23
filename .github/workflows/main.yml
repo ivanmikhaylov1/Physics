@@ -41,7 +41,7 @@ jobs:
     - name: run script and capture output
       id: run-script
       run: |
-        set -o pipefail
+        set +e
         cat > .run_with_backend.py <<'PY'
         import matplotlib
         matplotlib.use('Agg')
@@ -60,6 +60,7 @@ jobs:
         printf '%s\n' "$OUTPUT" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
         echo "exit_code=$RC" >> $GITHUB_OUTPUT
+
 
 
     - name: verify image
