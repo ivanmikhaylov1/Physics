@@ -19,10 +19,10 @@
 
 Уравнения движения:
 
-$x(t) = v0 * \cos(a) * t$
+- $x(t) = v0 * \cos(a) * t$
 
-$y(t) = v0 * \sin(t) * t - \frac{g * t ^ 2}{2}$
+- $y(t) = v0 * \sin(a) * t - \frac{g * t ^ 2}{2}$
 
 Время полёта: 
 
-$T = \frac{2 * v0 * \sin(a)}{g}$
+- $T = \frac{2 * v0 * \sin(a)}{g}$
