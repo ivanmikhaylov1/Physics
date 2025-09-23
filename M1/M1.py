@@ -26,9 +26,9 @@ if angle_degree > 90:
   raise ValueError("Угол должен быть не больше 90 градусов")
 if angle_degree <= 0:
   raise ValueError("Значение угла должно быть положительным")
-if k_linear >= 0:
+if k_linear < 0:
   raise ValueError("Значение линейного сопротивления должно быть положительным")
-if k_quadratic >= 0:
+if k_quadratic < 0:
   raise ValueError("Значение квадратичного сопротивления должно быть положительным")
 
 ### Проекции скоростей
