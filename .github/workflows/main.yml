@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      SCRIPT: M1/M1.py
+      SCRIPT: main.py
       IMAGE: trajectory.png
       BRANCH_PREFIX: generated-plot-
     steps:
@@ -19,6 +19,7 @@ jobs:
       with:
         fetch-depth: 0
         persist-credentials: true
+
     - name: restore-pip-cache
       uses: actions/cache@v4
       with:
@@ -26,6 +27,7 @@ jobs:
         key: pip-cache-${{ runner.os }}-{{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           pip-cache-${{ runner.os }}-
+
     - name: install-deps
       run: |
         python3 -V
@@ -35,60 +37,78 @@ jobs:
         else
           python3 -m pip install numpy scipy matplotlib
         fi
-    - name: run script with Agg backend
+
+    - name: run script and capture output
+      id: run-script
       run: |
-        python3 - <<'PY'
-        import matplotlib
-        matplotlib.use('Agg')
-        import runpy, sys, traceback, os
-        try:
-            runpy.run_path('${{ env.SCRIPT }}', run_name='__main__')
-        except Exception:
-            traceback.print_exc()
-            sys.exit(1)
-        finally:
-            os.system('ls -la')
-        PY
-    - name: verify output
+        set -o pipefail
+        OUTPUT=$(python3 - <<'PY'
+import matplotlib
+matplotlib.use('Agg')
+import runpy
+runpy.run_path('main.py', run_name='__main__')
+PY
+)
+        echo "$OUTPUT"
+        echo "OUTPUT<<EOF" >> $GITHUB_ENV
+        printf '%s\n' "$OUTPUT" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: verify image
+      id: verify-image
       run: |
-        ls -la
         if [ -f "${{ env.IMAGE }}" ]; then
-          echo "${{ env.IMAGE }} found"
+          echo "found=true" >> $GITHUB_OUTPUT
         else
-          echo "${{ env.IMAGE }} NOT found"
-          exit 1
+          echo "found=false" >> $GITHUB_OUTPUT
         fi
-    - name: create branch push image and prune only auto branches
+
+    - name: create branch and push image
+      if: steps.verify-image.outputs.found == 'true'
       run: |
         BRANCH_NAME="${{ env.BRANCH_PREFIX }}${{ github.run_id }}"
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git switch -c "$BRANCH_NAME"
         git add "${{ env.IMAGE }}"
-        if git diff --staged --quiet; then
-          echo "No changes to commit"
-        else
-          git commit -m "Add generated ${{ env.IMAGE }} from workflow #${{ github.run_id }}"
-          git push origin "$BRANCH_NAME"
-        fi
+        git commit -m "Add generated ${{ env.IMAGE }} from workflow #${{ github.run_id }}" || true
+        git push origin "$BRANCH_NAME"
         git fetch origin --prune
         for remote_ref in $(git ls-remote --heads origin | awk '{print $2}' | sed 's#refs/heads/##'); do
           case "$remote_ref" in
             $BRANCH_NAME) continue ;;
             main) continue ;;
             ${{ env.BRANCH_PREFIX }}*) 
-              git push origin --delete "$remote_ref" || true
+              if [ "$remote_ref" != "$BRANCH_NAME" ]; then
+                git push origin --delete "$remote_ref" || true
+              fi
               ;;
             *) continue ;;
           esac
         done
-    - name: add image to Actions summary
+
+    - name: add results and image to summary
       run: |
-        BRANCH_NAME="${{ env.BRANCH_PREFIX }}${{ github.run_id }}"
-        RAW_URL="https://github.com/${{ github.repository }}/blob/${{ env.BRANCH_PREFIX }}${{ github.run_id }}/${{ env.IMAGE }}?raw=true"
-        echo "![График]($RAW_URL)" >> $GITHUB_STEP_SUMMARY
-        echo "Raw URL: $RAW_URL"
+        {
+          echo "## Результаты запуска"
+          echo ""
+          echo '```'
+          printf '%s\n' "$OUTPUT"
+          echo '```'
+          echo ""
+          if [ -f "${{ env.IMAGE }}" ]; then
+            BRANCH_NAME="${{ env.BRANCH_PREFIX }}${{ github.run_id }}"
+            RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/$BRANCH_NAME/${{ env.IMAGE }}"
+            echo "![График]($RAW_URL)"
+            echo ""
+            echo "Raw URL: $RAW_URL"
+          else
+            echo "_График не был создан из-за ошибки._"
+          fi
+        } >> $GITHUB_STEP_SUMMARY
+
     - name: upload artifact
+      if: steps.verify-image.outputs.found == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: trajectory-plot
