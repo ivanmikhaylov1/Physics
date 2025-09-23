@@ -15,8 +15,8 @@ angle_degree = params["Угол броска"]
 angle_radians = np.radians(angle_degree)
 k_linear = params["Линейное сопротивление"]
 k_quadratic = params["Квадратичное сопротивление"]
-x0 = params["Начальная позиция x"]
-y0 = params["Начальная позиция y"]
+x0 = 0
+y0 = 0
 
 if v0 > 2000:
   raise ValueError("Слишком большая скорость")
