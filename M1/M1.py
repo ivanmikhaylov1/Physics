@@ -81,7 +81,7 @@ t_theory = np.linspace(0, t_theory_max, 200)
 x_theory = v0 * np.cos(np.radians(angle_degree)) * t_theory
 y_theory = v0 * np.sin(np.radians(angle_degree)) * t_theory - 0.5 * g * t_theory**2
 
-print(f"Параметры: v0={v0} м/с, угол={angle_degree}°")
+print(f"Параметры: v0={v0} м/с, угол={angle_degree}°, масса={m} кг")
 
 # Сравнение с теорией
 range_numeric = trajectory_none[-1, 0]
