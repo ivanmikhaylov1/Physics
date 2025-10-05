@@ -18,30 +18,31 @@ def choose_dt(params):
     model = params.get("model", "s")
     deformation = int(params.get("def", 0))
     k = float(params.get("k", 1000.0))
-
     v0 = float(params.get("speed", 10))
-    angle_deg = float(params.get("angle", 0))
-    v1 = v0 * math.cos(math.radians(angle_deg))
     r1 = float(params.get("radius", 1.0))
     m1 = float(params.get("mass", 1.0))
 
     vmax = abs(v0)
 
     if model == "w":
-        dt = r1 / (10 * max(vmax, 1e-6))
-
-
+        if deformation == 0:
+            dt = r1 / (10 * max(vmax, 1e-6))
+        else:
+            T = 2 * math.pi * math.sqrt(m1 / k)
+            dt = min(T / 10,  r1 / (10 * max(vmax, 1e-6)))
     elif model == "s":
         v02 = float(params.get("speed2", 0))
-        angle2_deg = float(params.get("angle2", 180))
-        v2 = v02 * math.cos(math.radians(angle2_deg))
         vmax = max(abs(v0), abs(v02), 1e-6)
 
         r2 = float(params.get("radius2", 1.0))
         m2 = float(params.get("mass2", 1.0))
 
-        dt = min(r1, r2) / (10 * max(vmax,1e-6))
-        
+        if deformation == 0:
+            dt = min(r1, r2) / (10 * vmax)
+        else:
+            m_eff = (m1 * m2) / (m1 + m2)
+            T = 2 * math.pi * math.sqrt(m_eff / k)
+            dt = min(T / 10,  min(r1, r2) / (10 * max(vmax, 1e-6)))
 
     return dt
 
@@ -93,9 +94,9 @@ def simulate_wall(params):
         v = v + a * dt
         x = x + v * dt
 
-    return np.array(traj), np.array(velocities), np.array(accelerations), radius_sim
+    return np.array(traj), np.array(velocities), np.array(accelerations), radius_sim, dt
 
-def animate_simulation(traj, velocities, accelerations, radius_sim, wall_x=0.0):
+def animate_simulation(traj, velocities, accelerations, radius_sim, wall_x, duration, dt):
     root = tk.Tk()
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -177,7 +178,8 @@ def animate_simulation(traj, velocities, accelerations, radius_sim, wall_x=0.0):
 
         text_info.set_text(
             f"v = {v_mod:.2f}, угол v = {v_ang:.1f}°\n"
-            f"a = {a_mod:.2f}, угол a = {a_ang:.1f}°"
+            f"a = {a_mod:.2f}, угол a = {a_ang:.1f}°\n"
+            f"Время: {frame * dt:.3f}s"
         )
 
         return [ball, text_info] + arrows
@@ -260,9 +262,9 @@ def simulate_spheres(params):
     return (np.array(traj1), np.array(traj2),
             np.array(vels1), np.array(vels2),
             np.array(accs1), np.array(accs2),
-            r1, r2)
+            r1, r2, dt)
 
-def animate_spheres(traj1, traj2, vels1, vels2, accs1, accs2, r1, r2):
+def animate_spheres(traj1, traj2, vels1, vels2, accs1, accs2, r1, r2, duration, dt):
     root = tk.Tk()
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -334,7 +336,8 @@ def animate_spheres(traj1, traj2, vels1, vels2, accs1, accs2, r1, r2):
 
         text_info.set_text(
             f"Шар 1: v={np.linalg.norm(v1):.2f}, a={np.linalg.norm(a1):.2f}\n"
-            f"Шар 2: v={np.linalg.norm(v2):.2f}, a={np.linalg.norm(a2):.2f}"
+            f"Шар 2: v={np.linalg.norm(v2):.2f}, a={np.linalg.norm(a2):.2f}\n"
+            f"Время: {frame * dt:.3f}s"
         )
 
         return [ball1, ball2, text_info] + arrows
@@ -342,19 +345,55 @@ def animate_spheres(traj1, traj2, vels1, vels2, accs1, accs2, r1, r2):
     ani = FuncAnimation(fig, update, frames=len(traj1), interval=50, blit=False)
     plt.show()
 
-#def validate_params(params):
-  
+def validate_params(params):
+    model = params.get("model", "w")
+    if model != "w" and model != "s":
+        raise ValueError("Uncorrected model")
+    v0 = float(params.get("speed", 10))
+    if v0 < 0 or v0 > 31:
+        raise ValueError("Uncorrected speed")
+    angle = float(params.get("angle", 0))
+    if angle < 0 or angle >= 360:
+        raise ValueError("Uncorrected angle")
+    duration = float(params.get("duration", 5.0))
+    if duration <= 0 or duration > 10:
+        raise ValueError("Uncorrected duration")
+    r1 = float(params.get("radius", 1.0))
+    if r1 <= 0 or r1 > 100:
+        raise ValueError("Uncorrected radius")
+    m1 = float(params.get("mass", 1.0))
+    if m1 < 1 or m1 > 10000:
+        raise ValueError("Uncorrected mass")
+    r2 = float(params.get("radius2", 1.0))
+    if r2 <= 0 or r2 > 100:
+        raise ValueError("Uncorrected radius2")
+    m2 = float(params.get("mass2", 1.0))
+    if m2 < 1 or m2 > 10000:
+        raise ValueError("Uncorrected mass2")
+    v02 = float(params.get("speed2", 0.0))
+    if v02 < 0 or v02 > 31:
+        raise ValueError("Uncorrected speed2")
+    angle2 = float(params.get("angle2", 180))
+    if angle2 < 0 or angle2 >= 360:
+        raise ValueError("Uncorrected angle2")
+    k = float(params.get("k", 1000.0))
+    if k <= 0 or k > 10000:
+        raise ValueError("Uncorrected k")
+    deform = int(params.get("def", 0))
+    if deform not in [0, 1, 2]:
+        raise ValueError("Uncorected deformation type")
 
 def main():
     params = read_params("params.txt")
+    validate_params(params)
     model = params.get("model")
-
+    duration = float(params.get("duration", 5.0))
     if model == "w":
-        traj, velocities, accelerations, radius_sim = simulate_wall(params)
-        animate_simulation(traj, velocities, accelerations, radius_sim)
+        traj, velocities, accelerations, radius_sim, dt = simulate_wall(params)
+        animate_simulation(traj, velocities, accelerations, radius_sim, 0.0, duration, dt)
     elif model == "s":
-        traj1, traj2, vels1, vels2, accs1, accs2, r1, r2 = simulate_spheres(params)
-        animate_spheres(traj1, traj2, vels1, vels2, accs1, accs2, r1, r2)
+        traj1, traj2, vels1, vels2, accs1, accs2, r1, r2, dt = simulate_spheres(params)
+        animate_spheres(traj1, traj2, vels1, vels2, accs1, accs2, r1, r2, duration, dt)
 
 if __name__ == "__main__":
     main()
