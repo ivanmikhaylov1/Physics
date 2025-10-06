@@ -19,7 +19,7 @@ git clone https://github.com/username/project-name.git
 
 ```powershell
 python -m venv venv
-.\venv\Scripts\Activate.ps1
+.\venv\Scripts\Activate
 ```
 
 **Linux/macOS:**
