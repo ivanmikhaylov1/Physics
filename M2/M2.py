@@ -381,7 +381,13 @@ def validate_params(params):
         raise ValueError("Uncorrected k")
     deform = int(params.get("def", 0))
     if deform not in [0, 1, 2]:
-        raise ValueError("Uncorected deformation type")
+        raise ValueError("Uncorrected deformation type")
+    pos1 = np.array([float(params.get("x0", 0.0)), float(params.get("y0", 0.0))])
+    pos2 = np.array([float(params.get("x0_2", 5.0)), float(params.get("y0_2", 0.0))])
+    dist = np.linalg.norm(pos1 - pos2)
+    if dist < r1 + r2:
+        raise ValueError("Uncorrected position")
+    
 
 def main():
     params = read_params("params.txt")
