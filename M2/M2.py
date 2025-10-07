@@ -44,7 +44,7 @@ def choose_dt(params):
             T = 2 * math.pi * math.sqrt(m_eff / k)
             dt = min(T / 10,  min(r1, r2) / (10 * max(vmax, 1e-6)))
 
-    return dt
+    return min(dt, 0.01)
 
 def reflect_from_wall(v):
     vx, vy = v
