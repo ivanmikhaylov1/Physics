@@ -1,0 +1,17 @@
+{
+  "mode": "horizontal",
+  "ball": {
+    "mass": 0.5,
+    "radius": 0.1,
+    "hollow": false
+  },
+  "plane": {
+    "friction_coeff": 0.15
+  },
+  "initial_conditions": {
+    "v0": 30.0,
+    "theta_v_deg": 40.0,
+    "omega0_x": 100.0,
+    "omega0_z": 100.0
+  }
+}
