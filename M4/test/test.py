@@ -1,11 +1,18 @@
 import unittest
-
 import numpy as np
-
 from M4.M4 import simulate, validate_params
 
 
 class TestInclineAnalytical(unittest.TestCase):
+    def setUp(self):
+        self.stats = []
+
+    def tearDown(self):
+        if self.stats:
+            print("\n=== Test Statistics ===")
+            for k, v in self.stats[-1].items():
+                print(f"{k}: {v}")
+
     def test_no_slip(self):
         m = np.random.uniform(0.001, 1000.0)
         r = np.random.uniform(0.001, 2.0)
@@ -21,15 +28,8 @@ class TestInclineAnalytical(unittest.TestCase):
 
         params = {
             "mode": "incline",
-            "ball": {
-                "mass": m,
-                "radius": r,
-                "hollow": hollow
-            },
-            "incline": {
-                "angle_deg": angle_deg,
-                "friction_coeff": fc
-            }
+            "ball": {"mass": m, "radius": r, "hollow": hollow},
+            "incline": {"angle_deg": angle_deg, "friction_coeff": fc}
         }
 
         validated = validate_params(params)
@@ -46,8 +46,20 @@ class TestInclineAnalytical(unittest.TestCase):
         np.testing.assert_allclose(omega_num, omega_analytical, rtol=5e-3, atol=1e-3)
         np.testing.assert_allclose(x_num, x_analytical, rtol=5e-3, atol=1e-3)
 
+        self.stats.append({
+            "test": "no_slip",
+            "mass": m,
+            "radius": r,
+            "hollow": hollow,
+            "angle_deg": angle_deg,
+            "friction_coeff": fc,
+            "max_v_rel": v_rel.max()
+        })
+
     def test_with_slip(self):
         diagnostics = []
+        all_attempts_stats = []
+
         for attempt in range(12):
             m = np.random.uniform(0.001, 1000.0)
             r = np.random.uniform(0.001, 2.0)
@@ -61,14 +73,8 @@ class TestInclineAnalytical(unittest.TestCase):
 
             params = {
                 "mode": "horizontal",
-                "ball": {
-                    "mass": m,
-                    "radius": r,
-                    "hollow": hollow
-                },
-                "plane": {
-                    "friction_coeff": fc
-                },
+                "ball": {"mass": m, "radius": r, "hollow": hollow},
+                "plane": {"friction_coeff": fc},
                 "initial_conditions": {
                     "v0": v0,
                     "theta_v_deg": float(theta_deg),
@@ -84,7 +90,6 @@ class TestInclineAnalytical(unittest.TestCase):
                 continue
 
             ts, x_num, y_num, v_num, omega_num, E_trans, E_rot, E_pot = simulate(validated)
-
             total_energy = E_trans + E_rot + E_pot
             energy_ok = bool(total_energy[-1] <= total_energy[0] + 1e-3)
 
@@ -97,12 +102,39 @@ class TestInclineAnalytical(unittest.TestCase):
             threshold = max(0.04, rel_start * 0.85)
             passed = energy_ok and (rel_end <= threshold)
 
+            all_attempts_stats.append({
+                "attempt": attempt + 1,
+                "mass": m,
+                "radius": r,
+                "hollow": hollow,
+                "friction_coeff": fc,
+                "v0": v0,
+                "rel_start": rel_start,
+                "rel_end": rel_end,
+                "energy_ok": energy_ok,
+                "passed": passed
+            })
+
             if passed:
+                self.stats.append({
+                    "test": "with_slip",
+                    "successful_attempt": attempt + 1,
+                    **all_attempts_stats[attempt]
+                })
                 return
 
         last_msgs = []
         for tag, p, info in diagnostics[-6:]:
             last_msgs.append(f"{tag} params={p} info={info}")
+        print("\n=== Last Diagnostics ===")
+        for msg in last_msgs:
+            print(msg)
+
+        self.stats.append({
+            "test": "with_slip",
+            "successful_attempt": None,
+            "attempts_stats": all_attempts_stats
+        })
 
 
 if __name__ == "__main__":
