@@ -2,9 +2,9 @@ name: M4 Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, M4 ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, M4 ]
 
 jobs:
   test:
